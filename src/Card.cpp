@@ -33,10 +33,10 @@ std::string Card::rankToString() const {
 
 std::string Card::suitToString() const {
     switch (suit_) {
-        case Suit::HEARTS:   return "♥";
-        case Suit::DIAMONDS: return "♦";
-        case Suit::CLUBS:    return "♣";
-        case Suit::SPADES:   return "♠";
+        case Suit::HEARTS:   return "\033[91m\u2665\033[0m";
+        case Suit::DIAMONDS: return "\033[91m\u2666\033[0m";
+        case Suit::CLUBS:    return "\u2663";
+        case Suit::SPADES:   return "\u2660";
         default:             return "?";
     }
 }

@@ -8,6 +8,7 @@ add_executable(baccarat
         src/main.cpp
         src/Card.cpp
         src/Deck.cpp
+        src/BaccaratGame.cpp
 )
 
 target_include_directories(baccarat PRIVATE include)
