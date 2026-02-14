@@ -1,87 +1,136 @@
 #include <iostream>
-#include <thread>
-#include <chrono>
+#include <string>
+#include <limits>
 #include "BaccaratGame.h"
+#include "Player.h"
+#include "Scoreboard.h"
+#include "Statistics.h"
+#include "Display.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-const std::string RESET = "\033[0m";
-const std::string BOLD = "\033[1m";
-const std::string GREEN = "\033[92m";
-const std::string CYAN = "\033[96m";
-const std::string RED = "\033[91m";
-const std::string BLUE = "\033[94m";
-const std::string GOLD = "\033[33m";
-
-void setupConsole() {
-#ifdef _WIN32
-    SetConsoleOutputCP(CP_UTF8);
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwMode = 0;
-    GetConsoleMode(hOut, &dwMode);
-    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-#endif
+static int readInt() {
+    int value;
+    if (std::cin >> value) return value;
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    return -1;
 }
 
-void delay(int ms) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+static double readDouble() {
+    double value;
+    if (std::cin >> value) return value;
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    return -1.0;
 }
 
-void printTitle() {
-    std::cout << GOLD << R"(
-    ╔═══════════════════════════════════════╗
-    ║     🎰  B A C C A R A T  🎰          ║
-    ║         ♠ ♥ ♦ ♣                       ║
-    ╚═══════════════════════════════════════╝
-    )" << RESET << std::endl;
-}
-
-void printDealing() {
-    std::cout << CYAN << "  Dealing";
-    for (int i = 0; i < 3; ++i) {
-        std::cout << "." << std::flush;
-        delay(300);
+static BaccaratGame::Winner readBetType() {
+    while (true) {
+        Display::printBetTypePrompt();
+        int choice = readInt();
+        switch (choice) {
+            case 1: return BaccaratGame::Winner::PLAYER;
+            case 2: return BaccaratGame::Winner::BANKER;
+            case 3: return BaccaratGame::Winner::TIE;
+            default: Display::printInvalidInput();
+        }
     }
-    std::cout << RESET << "\n" << std::endl;
+}
+
+static double readBetAmount(double balance) {
+    double maxBet = std::min(balance, Player::maximumBet());
+    while (true) {
+        Display::printBetAmountPrompt(balance, Player::minimumBet(), maxBet);
+        double amount = readDouble();
+        if (amount >= Player::minimumBet() && amount <= maxBet) return amount;
+        Display::printInvalidInput();
+    }
+}
+
+static void playHand(BaccaratGame& game, Player& player, Scoreboard& board, Statistics& stats) {
+    auto betType = readBetType();
+    double betAmount = readBetAmount(player.balance());
+
+    player.placeBet(betType, betAmount);
+    Display::printDealing();
+
+    auto winner = game.playHand();
+    double net = player.settleBet(winner);
+
+    Display::printGameTable(game, winner, player, net);
+
+    board.recordResult(winner);
+    stats.recordHand(winner, game.isNatural(), game.isPlayerPair(), game.isBankerPair(), net);
+
+    if (game.needsNewShoe()) {
+        Display::printNewShoe();
+        game.resetShoe();
+    }
 }
 
 int main() {
-    setupConsole();
-    printTitle();
+    Display::setupConsole();
 
     BaccaratGame game;
+    Player player;
+    Scoreboard board;
+    Statistics stats;
 
-    for (int i = 1; i <= 5; ++i) {
-        std::cout << BOLD << "  ┌─────────────────────────────────┐" << RESET << std::endl;
-        std::cout << BOLD << "  │  Hand #" << i << "                         │" << RESET << std::endl;
-        std::cout << BOLD << "  └─────────────────────────────────┘" << RESET << std::endl;
+    bool running = true;
 
-        printDealing();
+    while (running) {
+        Display::clearScreen();
+        Display::printTitle();
+        Display::printBalanceBar(player.balance());
+        Display::printMainMenu();
 
-        BaccaratGame::Winner winner = game.playHand();
+        int choice = readInt();
 
-        std::cout << "  " << game.getHandSummary();
-
-        std::cout << "\n  " << BOLD << ">>> ";
-        switch (winner) {
-            case BaccaratGame::Winner::PLAYER:
-                std::cout << BLUE << "PLAYER WINS!" << RESET;
+        switch (choice) {
+            case 1:
+                if (player.isBroke()) {
+                    Display::printBroke();
+                    Display::delay(1500);
+                } else {
+                    playHand(game, player, board, stats);
+                    std::cout << "\n    Press Enter to continue...";
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    std::cin.get();
+                }
                 break;
-            case BaccaratGame::Winner::BANKER:
-                std::cout << RED << "BANKER WINS!" << RESET;
+
+            case 2:
+                Display::clearScreen();
+                Display::printScoreboard(board);
+                std::cout << "\n    Press Enter to continue...";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cin.get();
                 break;
-            case BaccaratGame::Winner::TIE:
-                std::cout << GREEN << "TIE GAME!" << RESET;
+
+            case 3:
+                Display::clearScreen();
+                Display::printStatistics(stats, player.balance());
+                std::cout << "\n    Press Enter to continue...";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cin.get();
+                break;
+
+            case 4:
+                game.resetShoe();
+                Display::printNewShoe();
+                Display::delay(1000);
+                break;
+
+            case 5:
+                running = false;
+                break;
+
+            default:
+                Display::printInvalidInput();
+                Display::delay(500);
                 break;
         }
-        std::cout << BOLD << " <<<" << RESET << "\n" << std::endl;
-
-        delay(500);
     }
 
-    std::cout << GOLD << "  Thanks for playing!\n" << RESET << std::endl;
-
+    Display::printGoodbye();
     return 0;
 }

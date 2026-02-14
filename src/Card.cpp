@@ -2,17 +2,12 @@
 
 Card::Card(Rank rank, Suit suit) : rank_(rank), suit_(suit) {}
 
-int Card::getBaccaratValue() const {
-    int rankValue = static_cast<int>(rank_);
-
-    if (rankValue >= 10) {
-        return 0;
-    }
-
-    return rankValue;
+int Card::baccaratValue() const {
+    int value = static_cast<int>(rank_);
+    return value >= 10 ? 0 : value;
 }
 
-std::string Card::rankToString() const {
+std::string Card::rankSymbol() const {
     switch (rank_) {
         case Rank::ACE:   return "A";
         case Rank::TWO:   return "2";
@@ -31,16 +26,12 @@ std::string Card::rankToString() const {
     }
 }
 
-std::string Card::suitToString() const {
+std::string Card::suitSymbol() const {
     switch (suit_) {
-        case Suit::HEARTS:   return "\033[91m\u2665\033[0m";
-        case Suit::DIAMONDS: return "\033[91m\u2666\033[0m";
+        case Suit::HEARTS:   return "\u2665";
+        case Suit::DIAMONDS: return "\u2666";
         case Suit::CLUBS:    return "\u2663";
         case Suit::SPADES:   return "\u2660";
         default:             return "?";
     }
-}
-
-std::string Card::toString() const {
-    return "[" + rankToString() + suitToString() + "]";
 }

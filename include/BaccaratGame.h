@@ -4,29 +4,24 @@
 #include "Card.h"
 #include "Deck.h"
 #include <vector>
-#include <string>
 
 class BaccaratGame {
 public:
-    enum class Winner {
-        PLAYER,
-        BANKER,
-        TIE
-    };
+    enum class Winner { PLAYER, BANKER, TIE };
 
     BaccaratGame();
 
     Winner playHand();
+    void resetShoe();
 
-    int getPlayerHandValue() const;
-    int getBankerHandValue() const;
-
-    std::vector<Card> getPlayerHand() const { return playerHand_; }
-    std::vector<Card> getBankerHand() const { return bankerHand_; }
-
-    std::string getHandSummary() const;
-
-    bool needsNewShoe() const { return deck_.needsReshuffle(); }
+    [[nodiscard]] int playerHandValue() const;
+    [[nodiscard]] int bankerHandValue() const;
+    [[nodiscard]] const std::vector<Card>& playerHand() const { return playerHand_; }
+    [[nodiscard]] const std::vector<Card>& bankerHand() const { return bankerHand_; }
+    [[nodiscard]] bool isNatural() const;
+    [[nodiscard]] bool isPlayerPair() const;
+    [[nodiscard]] bool isBankerPair() const;
+    [[nodiscard]] bool needsNewShoe() const { return deck_.needsReshuffle(); }
 
 private:
     Deck deck_;
@@ -36,10 +31,9 @@ private:
     void clearHands();
     void dealInitialCards();
     void applyThirdCardRules();
-    int calculateHandValue(const std::vector<Card>& hand) const;
-
-    bool playerDrawsThirdCard() const;
-    bool bankerDrawsThirdCard(int playerThirdCardValue) const;
+    [[nodiscard]] int handValue(const std::vector<Card>& hand) const;
+    [[nodiscard]] bool playerDrawsThird() const;
+    [[nodiscard]] bool bankerDrawsThird(int playerThirdValue) const;
 };
 
-#endif //BACCARAT_SIMULATOR_BACCARATGAME_H
+#endif

@@ -6,23 +6,21 @@
 
 class Deck {
 public:
-    Deck(int numDecks = 8);
+    explicit Deck(int numDecks = 8);
 
     void shuffle();
-
+    void reset();
     Card dealCard();
 
-    bool needsReshuffle() const;
-
-    void reset();
-
-    size_t remainingCards() const { return cards_.size(); }
+    [[nodiscard]] bool needsReshuffle() const;
+    [[nodiscard]] size_t remainingCards() const { return cards_.size(); }
 
 private:
     std::vector<Card> cards_;
     int numDecks_;
     static constexpr double PENETRATION = 0.75;
 
-    void initializeDeck();
+    void initialize();
 };
-#endif //BACCARAT_SIMULATOR_DECK_H
+
+#endif

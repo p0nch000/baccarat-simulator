@@ -4,50 +4,40 @@
 #include <chrono>
 
 Deck::Deck(int numDecks) : numDecks_(numDecks) {
-    initializeDeck();
+    initialize();
     shuffle();
 }
 
-void Deck::initializeDeck() {
+void Deck::initialize() {
     cards_.clear();
+    cards_.reserve(numDecks_ * 52);
 
-    for (int deck = 0; deck < numDecks_; ++deck) {
-        for (int suit = 0; suit < 4; ++suit) {
-            for (int rank = 1; rank <= 13; ++rank) {
-                cards_.push_back(Card(
-                    static_cast<Card::Rank>(rank),
-                    static_cast<Card::Suit>(suit)
-                ));
-            }
-        }
-    }
+    for (int d = 0; d < numDecks_; ++d)
+        for (int s = 0; s < 4; ++s)
+            for (int r = 1; r <= 13; ++r)
+                cards_.emplace_back(static_cast<Card::Rank>(r), static_cast<Card::Suit>(s));
 }
 
 void Deck::shuffle() {
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine rng(seed);
-
+    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::mt19937 rng(static_cast<unsigned>(seed));
     std::shuffle(cards_.begin(), cards_.end(), rng);
 }
 
 Card Deck::dealCard() {
-    if (cards_.empty()) {
-        reset();
-    }
+    if (cards_.empty()) reset();
     Card card = cards_.back();
     cards_.pop_back();
     return card;
 }
 
 bool Deck::needsReshuffle() const {
-    int totalCards = numDecks_ * 52;
-    int cardsUsed = totalCards - cards_.size();
-    double penetration = static_cast<double>(cardsUsed) / totalCards;
-
-    return penetration >= PENETRATION;
+    int total = numDecks_ * 52;
+    double used = static_cast<double>(total - static_cast<int>(cards_.size())) / total;
+    return used >= PENETRATION;
 }
 
 void Deck::reset() {
-    initializeDeck();
+    initialize();
     shuffle();
 }
